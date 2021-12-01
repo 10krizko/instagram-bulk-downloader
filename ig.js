@@ -23,8 +23,12 @@ fs.readFile(sourceFileName, function (err, data) {
             if (parsedPostsCount > 0) {
                 console.log('🗄 Parsing finished.', parsedPostsCount, 'valid public Instagram post URLs found.');
                 downloadPosts(posts);
+
+                return
             } else {
                 console.log('🛑 Parsing failed. If your input file is OK, Instagram is probably redirecting you to login (they really don\'t like scraping). Try it again tomorrow.')
+
+                return
             }
         }
     );
