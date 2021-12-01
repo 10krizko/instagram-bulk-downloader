@@ -1,5 +1,8 @@
 # Instagram Bulk Downloader
-A simple JS script that downloads Instagram images in bulk. It takes a text file with URLs to public Instagram posts as input. Handy for downloading your own Saved posts. It can download images and albums, but not videos.
+Simple JS script that downloads Instagram images in bulk. 
+- takes a text file with URLs to public Instagram posts as input
+- handy for downloading your own Saved posts
+- can download images and albums, but not videos
 
 ## Usage
 1. Download the project.
