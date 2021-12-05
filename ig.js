@@ -48,7 +48,7 @@ async function parseUrls(source) {
     console.log('⏳ Program waits 3 to 5 seconds between parsing requests to avoid Instagram\'s rate limit.');
 
     // Calculate random sleep times between requests and make it 0 before the first one
-    let sleepTimes = trimmedSource.map(() => getSleepTime())
+    let sleepTimes = trimmedSource.map(() => getParsingSleepTime())
     sleepTimes[0] = 0
 
     const imgData = trimmedSource
@@ -100,7 +100,7 @@ async function parseUrls(source) {
 }
 
 
-function getSleepTime() {
+function getParsingSleepTime() {
     return Math.floor(((Math.random() * 2) + 3) * 1000);
 }
 
@@ -109,14 +109,17 @@ function timeout(ms) {
 }
 
 function downloadPosts(posts) {
-    let downloadedState = {}
+    const sleepTime = 300;
+    const downloadedState = {}
+    let currentSleepTime = 0;
 
     posts.forEach((post) => {
         if (post) {
             if (post.type === 'image') {
 
                 downloadedState[post.shortcode + ''] = false
-                downloadImg(post.url, dir, post.shortcode, downloadedState);
+                setTimeout(() => { downloadImg(post.url, dir, post.shortcode, downloadedState) }, currentSleepTime);
+                currentSleepTime += sleepTime;
             } else if (post.type === 'album') {
                 if (!fs.existsSync(dir + post.shortcode)) {
                     fs.mkdir(dir + post.shortcode, (err) => {
@@ -126,7 +129,8 @@ function downloadPosts(posts) {
 
                 post.urls.forEach((url, j) => {
                     downloadedState[post.shortcode + '-' + j] = false
-                    downloadImg(url, dir + post.shortcode + '/', post.shortcode + '-' + j, downloadedState);
+                    setTimeout(() => { downloadImg(url, dir + post.shortcode + '/', post.shortcode + '-' + j, downloadedState) }, currentSleepTime);
+                    currentSleepTime += sleepTime;
                 });
             }
         }
@@ -141,18 +145,19 @@ function downloadImg(url, path, filename, downloadedState) {
     https.get(url, (res) => {
         if (res.statusCode != 200) {
             console.log('❌ Cannot download', url, 'because:', res.statusCode);
+            res.resume();
             return
         }
 
         res.pipe(fs.createWriteStream(fullLocalPath))
-            .on('close', () => {
+            .on('error', (error) => {
+                console.log('ERROR:', filename, error)
+            })
+            .once('close', () => {
                 console.log('👍 File', filename, 'downloaded successfully.')
                 downloadedPostsCount++;
                 updateDownloadState(filename + '', downloadedState)
             })
-            .on('error', (error) => {
-                console.log('ERROR:', filename, error)
-            });
     });
 }
 
@@ -160,6 +165,6 @@ function updateDownloadState(key, state) {
     state[key] = true;
 
     if (Object.values(state).every((value) => value === true)) {
-        console.log('✅ Downloading finished. ', downloadedPostsCount, 'posts downloaded. You\'ll find them in', dir)
+        console.log('✅ Downloading finished.', downloadedPostsCount, 'posts downloaded. You\'ll find them in', dir)
     }
 }
